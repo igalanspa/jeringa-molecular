@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jeringa molecular</title>
+<meta name="description" content="Simulación de la ley de Boyle-Mariotte: moléculas que chocan contra un émbolo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Poppins:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#eae9e7; --surface:#f6f4f0; --taupe:#cfc7ba; --line:#d9d2c6;
+  --ink:#322418; --muted:#7d7670; --cool:#3f6a86; --hot:#b4532a; --ok:#4f7a4a;
+  --glass:#ffffffb3;
+  --display:"Playfair Display", "Bodoni 72", Georgia, serif;
+  --body:"Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#1c1814; --surface:#26201b; --taupe:#3a322a; --line:#40372f;
+    --ink:#efe8dc; --muted:#a89e91; --cool:#7fb0cf; --hot:#e4875c; --ok:#8dbb86;
+    --glass:#1c1814cc;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#1c1814; --surface:#26201b; --taupe:#3a322a; --line:#40372f;
+  --ink:#efe8dc; --muted:#a89e91; --cool:#7fb0cf; --hot:#e4875c; --ok:#8dbb86;
+  --glass:#1c1814cc;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,56px);line-height:1;letter-spacing:.01em;text-transform:uppercase;margin:0;text-wrap:balance}
+.lede{margin:0;color:var(--muted);max-width:62ch}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:14px}
+canvas{display:block;width:100%}
+#box{height:auto;aspect-ratio:16/10;border-radius:3px}
+.scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:-8px}
+.ctrl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px 12px;align-items:center}
+.ctrl label{font-size:13px;color:var(--muted)}
+.ctrl output{font-family:var(--mono);font-size:14px;min-width:72px;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--ink);height:28px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:500 13px var(--body);color:var(--ink);background:transparent;border:1px solid var(--ink);border-radius:999px;padding:8px 14px;cursor:pointer}
+button:hover{background:var(--taupe)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cool);outline-offset:2px}
+button.ghost{border-color:var(--line);color:var(--muted)}
+.side{display:flex;flex-direction:column;gap:14px}
+.readout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.cell{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.cell span{font-size:12px;color:var(--muted)}
+.cell b{font-family:var(--mono);font-weight:500;font-size:22px;font-variant-numeric:tabular-nums}
+.cell.key{grid-column:1/-1;background:var(--taupe)}
+.cell.key b{font-size:28px}
+.cell.key small{font-size:12px;color:var(--muted)}
+.plot{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.plot h2,.try h2{font-family:var(--body);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px;color:var(--muted)}
+#pv{height:auto;aspect-ratio:4/3}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:6px;background:var(--muted)}
+.legend i.dot{width:8px;height:8px;border-radius:50%;background:var(--hot)}
+.try{border-top:1px solid var(--line);padding-top:16px}
+.try ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;max-width:70ch}
+.try li::marker{font-family:var(--mono);color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted);max-width:70ch;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Ley de Boyle-Mariotte · teoría cinética</span>
+    <h1>Jeringa molecular</h1>
+    <p class="lede">Cada punto es una molécula de aire dentro de una jeringa tapada. Empuja el émbolo o calienta el gas y mira qué le pasa a la presión.</p>
+  </header>
+
+  <div class="grid">
+    <section class="stage" aria-label="Simulación">
+      <canvas id="box" aria-label="Moléculas rebotando dentro de una jeringa con émbolo móvil"></canvas>
+      <div class="scale" aria-hidden="true"><span>0 mL</span><span>5</span><span>10</span><span>15</span><span>20 mL</span></div>
+      <div class="ctrl">
+        <label for="vol">Volumen</label>
+        <input type="range" id="vol" min="5" max="20" step="0.5" value="20">
+        <output id="volOut" for="vol">20,0 mL</output>
+        <label for="tem">Temperatura</label>
+        <input type="range" id="tem" min="293" max="586" step="1" value="293">
+        <output id="temOut" for="tem">20 °C</output>
+      </div>
+      <div class="btns">
+        <button id="half">Comprimir a 10 mL</button>
+        <button id="hot">Duplicar temperatura</button>
+        <button id="reset" class="ghost">Restablecer</button>
+        <button id="pause" class="ghost" aria-pressed="false">Pausar</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="readout" aria-live="polite">
+        <div class="cell"><span>Presión medida</span><b id="rP">101,3 kPa</b></div>
+        <div class="cell"><span>Choques por segundo</span><b id="rC">–</b></div>
+        <div class="cell key"><span>P · V</span><b id="rPV">2.026</b><small id="rPVnote">kPa·mL · a 20 °C debería rondar 2.026</small></div>
+      </div>
+      <div class="plot">
+        <h2>Diagrama P–V</h2>
+        <canvas id="pv" aria-label="Gráfico de presión contra volumen con la hipérbola de Boyle"></canvas>
+        <div class="legend"><span><i></i>Boyle: P·V = constante</span><span><i class="dot"></i>Tu medición</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="try">
+    <h2>Dos experimentos</h2>
+    <ol>
+      <li><strong>Temperatura fija.</strong> Toca «Comprimir a 10 mL». La presión sube a cerca del doble (unos 203 kPa), pero P·V se mantiene cerca de 2.026. Es la ley de Boyle.</li>
+      <li><strong>Temperatura variable.</strong> Toca «Duplicar temperatura». Las moléculas se mueven más rápido y P·V también se duplica. La constante de Boyle solo es constante mientras T no cambie.</li>
+    </ol>
+    <p class="note" style="margin-top:12px">La presión que ves es un promedio de miles de choques, por eso oscila un poco. Modelo de gas ideal en dos dimensiones: las moléculas no chocan entre sí ni se atraen, y el émbolo se mueve lento para no calentar el gas. Valores de referencia: 20 mL de aire a 101,3 kPa y 20 °C.</p>
+  </section>
+</div>
+
+<script>
+(()=>{
+const box=document.getElementById('box'),bx=box.getContext('2d');
+const pv=document.getElementById('pv'),px=pv.getContext('2d');
+const vol=document.getElementById('vol'),tem=document.getElementById('tem');
+const $=id=>document.getElementById(id);
+const fmt=(n,d)=>n.toLocaleString('es-CL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const P0=101.3,V0=20,T0=293,N=280,R=2.1;
+let W=0,H=0,dpr=1,paused=false;
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function size(c,ctx){const r=c.getBoundingClientRect();dpr=window.devicePixelRatio||1;c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return r}
+function resize(){const r=size(box,bx);W=r.width;H=r.height;size(pv,px);drawPV()}
+
+let parts=[];
+function rayleigh(){return Math.sqrt(-2*Math.log(1-Math.random()))}
+function init(){
+  parts=[];
+  for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2,s=rayleigh();parts.push({x:Math.random(),y:Math.random(),vx:Math.cos(a)*s,vy:Math.sin(a)*s})}
+  let m=0;for(const p of parts)m+=p.vx*p.vx+p.vy*p.vy;m/=N;const k=1/Math.sqrt(m);
+  for(const p of parts){p.vx*=k;p.vy*=k}
+}
+init();
+
+let T=T0,pist=1,target=1;
+let imp=0,hits=0,acc=0,Pema=null,Cema=null,trail=[];
+const BASE=0.55;
+
+function setT(nt){const k=Math.sqrt(nt/T);for(const p of parts){p.vx*=k;p.vy*=k}T=nt;Pema=null;Cema=null;trail=[]}
+function upd(){
+  const v=+vol.value;target=v/V0;$('volOut').textContent=fmt(v,1)+' mL';
+  const t=+tem.value;if(t!==T)setT(t);$('temOut').textContent=Math.round(t-273)+' °C';
+  $('rPVnote').textContent='kPa·mL · a '+Math.round(T-273)+' °C debería rondar '+fmt(P0*V0*T/T0,0);
+}
+vol.addEventListener('input',()=>{upd();Pema=null;trail=[]});
+tem.addEventListener('input',upd);
+$('half').onclick=()=>{vol.value=10;upd();Pema=null;trail=[]};
+$('hot').onclick=()=>{tem.value=586;upd()};
+$('reset').onclick=()=>{vol.value=20;tem.value=293;upd();init();T=T0;pist=1;Pema=null;Cema=null;trail=[]};
+$('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Reanudar':'Pausar';e.target.setAttribute('aria-pressed',paused)};
+
+function step(dt){
+  pist+= (target-pist)*Math.min(1,dt*1.6);
+  if(Math.abs(target-pist)<0.002)pist=target;
+  const sp=BASE*Math.sqrt(T/T0),ar=W/H;
+  const moving=pist!==target;
+  for(const p of parts){
+    p.x+=p.vx*sp*dt/ar; p.y+=p.vy*sp*dt;
+    if(p.x<0){p.x=-p.x;p.vx=Math.abs(p.vx);imp+=2*p.vx;hits++}
+    if(p.x>pist){
+      if(moving&&p.x-pist>0.01){p.x=pist-Math.random()*0.01;p.vx=-Math.abs(p.vx)}
+      else{p.x=2*pist-p.x;p.vx=-Math.abs(p.vx);imp+=2*Math.abs(p.vx);hits++}
+    }
+    if(p.y<0){p.y=-p.y;p.vy=Math.abs(p.vy);imp+=2*p.vy;hits++}
+    if(p.y>1){p.y=2-p.y;p.vy=-Math.abs(p.vy);imp+=2*Math.abs(p.vy);hits++}
+  }
+  acc+=dt;
+  if(acc>=0.25){
+    // 2D ideal gas: P·A = N·<v²>/2. Measured P = impulse / (perimeter · time), normalised so P = P0 at V0, T0.
+    const perim=2*pist*ar+2;
+    const raw=imp*sp/(perim*acc);
+    const ref=N*BASE*BASE/(2*ar);
+    const meas=P0*raw/ref;
+    Pema=Pema==null?meas:Pema*0.92+meas*0.08;
+    const C=hits/acc;Cema=Cema==null?C:Cema*0.92+C*0.08;
+    imp=0;hits=0;acc=0;
+    if(!moving){trail.push({v:pist*V0,p:Pema});if(trail.length>40)trail.shift()}
+    $('rP').textContent=fmt(Pema,1)+' kPa';
+    $('rC').textContent=Math.round(Cema).toLocaleString('es-CL');
+    $('rPV').textContent=fmt(Pema*pist*V0,0);
+  }
+}
+
+function drawBox(){
+  const bg=css('--surface'),ink=css('--ink'),muted=css('--muted'),line=css('--line'),cool=css('--cool'),hot=css('--hot'),taupe=css('--taupe');
+  bx.clearRect(0,0,W,H);
+  const gx=W*pist;
+  bx.fillStyle=taupe;bx.fillRect(gx,0,W-gx,H);
+  bx.strokeStyle=line;bx.lineWidth=1;
+  for(let i=1;i<4;i++){const x=W*i/4;bx.beginPath();bx.moveTo(x,0);bx.lineTo(x,6);bx.moveTo(x,H);bx.lineTo(x,H-6);bx.stroke()}
+  const f=Math.min(1,(T-T0)/(T0));
+  bx.fillStyle=mix(cool,hot,f);
+  for(const p of parts){bx.beginPath();bx.arc(p.x*W,p.y*H,R,0,6.2832);bx.fill()}
+  bx.fillStyle=ink;bx.fillRect(gx-3,0,6,H);
+  bx.fillRect(gx,H/2-2,W-gx,4);
+  bx.strokeStyle=ink;bx.lineWidth=2;bx.strokeRect(1,1,W-2,H-2);
+  void bg;void muted;
+}
+function mix(a,b,t){const pa=hex(a),pb=hex(b);if(!pa||!pb)return a;return 'rgb('+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t)).join(',')+')'}
+function hex(h){h=h.replace('#','');if(h.length<6)return null;return [0,2,4].map(i=>parseInt(h.substr(i,2),16))}
+
+function drawPV(){
+  const r=pv.getBoundingClientRect(),w=r.width,h=r.height;if(!w)return;
+  const ink=css('--ink'),muted=css('--muted'),line=css('--line'),hot=css('--hot'),cool=css('--cool');
+  px.clearRect(0,0,w,h);
+  const L=46,Rr=10,Tt=10,B=30,iw=w-L-Rr,ih=h-Tt-B;
+  const vx=v=>L+(v-0)/(22)*iw, py=p=>Tt+ih-(p/900)*ih;
+  px.font='11px '+getComputedStyle(document.body).fontFamily;px.fillStyle=muted;px.strokeStyle=line;px.lineWidth=1;
+  for(const p of [0,200,400,600,800]){const y=py(p);px.beginPath();px.moveTo(L,y);px.lineTo(w-Rr,y);px.stroke();px.textAlign='right';px.fillText(p,L-6,y+4)}
+  for(const v of [0,5,10,15,20]){const x=vx(v);px.textAlign='center';px.fillText(v,x,h-B+16)}
+  px.textAlign='left';px.fillText('kPa',4,Tt+8);px.textAlign='right';px.fillText('mL',w-Rr,h-4);
+  const k=P0*V0*T/T0;
+  px.strokeStyle=muted;px.lineWidth=1.5;px.setLineDash([4,4]);px.beginPath();
+  let first=true;for(let v=2.3;v<=21;v+=0.1){const p=k/v;if(p>900)continue;const x=vx(v),y=py(p);first?px.moveTo(x,y):px.lineTo(x,y);first=false}
+  px.stroke();px.setLineDash([]);
+  if(T!==T0){px.strokeStyle=line;px.beginPath();first=true;for(let v=2.3;v<=21;v+=0.1){const p=P0*V0/v;if(p>900)continue;const x=vx(v),y=py(p);first?px.moveTo(x,y):px.lineTo(x,y);first=false}px.stroke()}
+  px.fillStyle=hot;
+  trail.forEach((t,i)=>{px.globalAlpha=0.15+0.85*i/trail.length;px.beginPath();px.arc(vx(t.v),py(Math.min(t.p,890)),3,0,6.2832);px.fill()});
+  px.globalAlpha=1;
+  if(Pema!=null){px.beginPath();px.arc(vx(pist*V0),py(Math.min(Pema,890)),5,0,6.2832);px.fill();px.strokeStyle=ink;px.lineWidth=1;px.stroke()}
+  void cool;
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.04,(now-last)/1000);last=now;
+  if(!paused)step(dt);
+  drawBox();drawPV();
+  requestAnimationFrame(loop);
+}
+window.addEventListener('resize',resize);
+resize();upd();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
